@@ -1,0 +1,137 @@
+package com.boge.android_0618_notebook;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import com.boge.android_0618_notebook.entity.Note;
+
+import android.os.Bundle;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
+import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+
+public class EditActivity extends Activity implements OnClickListener {
+	private Button submit_btn;
+	private EditText title_edt;
+	private EditText content_edt;
+	private MyOpenHelper myHelper;
+	private SQLiteDatabase db;
+	private int SUBMIT_STATE = 1;
+	private int id;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_edit);
+		initView();
+	}
+
+	private void initView() {
+		submit_btn = (Button) findViewById(R.id.submit);
+		title_edt = (EditText) findViewById(R.id.title);
+		content_edt = (EditText) findViewById(R.id.content);
+		submit_btn.setOnClickListener(this);
+		myHelper = new MyOpenHelper(this, "notedb", null, 1);
+
+		lookOrUpdate();
+	}
+
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()) {
+		case R.id.submit:
+			if (SUBMIT_STATE == 1) {
+				saveNoteToDB();
+			} else {
+				updateNoteToDB();
+			}
+			break;
+
+		default:
+			break;
+		}
+
+	}
+
+	/**
+	 * 创建笔记
+	 */
+	private void saveNoteToDB() {
+		String title = title_edt.getText().toString();
+		String content = content_edt.getText().toString();
+		Log.i("boge", "title=" + title);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		String time = sdf.format(new Date());
+		db = myHelper.getWritableDatabase();
+		ContentValues values = new ContentValues();
+		values.put("title", title);
+		values.put("content", content);
+		values.put("time", time);
+		db.insert("note", null, values);
+		db.close();
+		EditActivity.this.finish();
+
+	}
+
+	/**
+	 * 更新记录
+	 */
+	private void updateNoteToDB() {
+		db = myHelper.getWritableDatabase();
+		String title = title_edt.getText().toString();
+		String content = content_edt.getText().toString();
+		Log.i("boge", "title=" + title);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		String time = sdf.format(new Date());
+		ContentValues values = new ContentValues();
+		values.put("title", title);
+		values.put("content", content);
+		values.put("time", time);
+		String whereClause = "id=" + id;
+		db.update("note", values, whereClause, null);
+		db.close();
+		EditActivity.this.finish();
+	}
+
+	/**
+	 * 查看或查看note
+	 */
+	private void lookOrUpdate() {
+		id = getIntent().getIntExtra("id", -1);
+		if (id != -1) {
+			queryNote(id);
+			SUBMIT_STATE = 2;
+			submit_btn.setText("更新");
+		}
+
+	}
+
+	private void queryNote(int id) {
+		db = myHelper.getReadableDatabase();
+		String selection = "id=" + id;
+		Cursor queryCursor = db.query("note", null, selection, null, null,
+				null, null);
+		for (queryCursor.moveToFirst(); !queryCursor.isAfterLast(); queryCursor
+				.moveToNext()) {
+			String title = queryCursor.getString(1);
+			String content = queryCursor.getString(2);
+			title_edt.setText(title);
+			content_edt.setText(content);
+			Log.i("boge", "title=" + title + " content=" + content);
+		}
+
+	}
+}

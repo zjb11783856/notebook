@@ -1,0 +1,74 @@
+package com.boge.android_0618_notebook.utils;
+
+import java.io.IOException;
+
+import android.content.Context;
+import android.content.Intent;
+import android.media.MediaPlayer;
+import android.util.Log;
+
+public class MyMediraPlayer {
+	private static final MyMediraPlayer myPlayer = new MyMediraPlayer();
+	private MediaPlayer player;
+	private static Context context2;
+
+	public MyMediraPlayer() {
+		if (!isExist()) {
+			player = new MediaPlayer();
+		}
+	}
+
+	public static MyMediraPlayer getInstance(Context context) {
+		context2 = context;
+		return myPlayer;
+	}
+
+	public void play(String path) {
+
+		try {
+			player.reset();
+			player.setDataSource(path);
+			player.prepare();
+			player.start();
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					while (player.isPlaying()) {
+						int currentPosition = player.getCurrentPosition();
+						
+					}
+					Intent intent = new Intent();
+					intent.setAction("PLAY_END");
+					context2.sendBroadcast(intent);
+				}
+			}).start();
+
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public void stop() {
+		if (!isExist()) {
+			Log.i("boge", "stop");
+			player.stop();
+			player.release();
+		}
+
+	}
+
+	public boolean isExist() {
+		if (player != null) {
+			return true;
+		}
+		return false;
+	}
+}
